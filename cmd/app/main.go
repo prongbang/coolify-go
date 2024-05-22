@@ -12,38 +12,37 @@ import (
 func main() {
 	app := fiber.New()
 
+	//redisURL := "redis://user:password@localhost:6379/0?protocol=3"
 	redisURL := os.Getenv("REDIS_URL")
-	redisPass := os.Getenv("REDIS_PASS")
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr:     redisURL,
-		Password: redisPass,
-		DB:       0,
-	})
+	opts, err := redis.ParseURL(redisURL)
+	if err != nil {
+		log.Error(err)
+	}
+	rdb := redis.NewClient(opts)
 
 	ctx := context.Background()
-	err := rdb.Set(ctx, "key", "Hello, Coolify with GO!", 0).Err()
+	err = rdb.Set(ctx, "key", "Hello, Coolify with GO!", 0).Err()
 	if err != nil {
 		log.Error(err)
 	}
 
 	app.Get("/reload", func(c *fiber.Ctx) error {
 		redisURL = os.Getenv("REDIS_URL")
-		redisPass = os.Getenv("REDIS_PASS")
 
-		rdb = redis.NewClient(&redis.Options{
-			Addr:     redisURL,
-			Password: redisPass,
-			DB:       0,
-		})
+		opts, err := redis.ParseURL(redisURL)
+		if err != nil {
+			log.Error(err)
+			return c.SendString(err.Error())
+		}
+		rdb = redis.NewClient(opts)
 
 		return c.SendString("OK")
 	})
 
-	app.Get("/healcheck", func(c *fiber.Ctx) error {
+	app.Get("/healthcheck", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
-			"url":  redisURL,
-			"pass": redisPass,
+			"url": redisURL,
 		})
 	})
 
