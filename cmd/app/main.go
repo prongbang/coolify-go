@@ -12,9 +12,12 @@ import (
 func main() {
 	app := fiber.New()
 
+	redisURL := os.Getenv("REDIS_URL")
+	redisPass := os.Getenv("REDIS_PASS")
+
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_URL"),
-		Password: os.Getenv("REDIS_PASS"),
+		Addr:     redisURL,
+		Password: redisPass,
 		DB:       0, // use default DB
 	})
 
@@ -23,6 +26,13 @@ func main() {
 	if err != nil {
 		log.Error(err)
 	}
+
+	app.Get("/healcheck", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"url":  redisURL,
+			"pass": redisPass,
+		})
+	})
 
 	app.Get("/", func(c *fiber.Ctx) error {
 		val, err := rdb.Get(ctx, "key").Result()
