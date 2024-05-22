@@ -18,7 +18,7 @@ func main() {
 	rdb := redis.NewClient(&redis.Options{
 		Addr:     redisURL,
 		Password: redisPass,
-		DB:       0, // use default DB
+		DB:       0,
 	})
 
 	ctx := context.Background()
@@ -26,6 +26,19 @@ func main() {
 	if err != nil {
 		log.Error(err)
 	}
+
+	app.Get("/reload", func(c *fiber.Ctx) error {
+		redisURL = os.Getenv("REDIS_URL")
+		redisPass = os.Getenv("REDIS_PASS")
+
+		rdb = redis.NewClient(&redis.Options{
+			Addr:     redisURL,
+			Password: redisPass,
+			DB:       0,
+		})
+
+		return c.SendString("OK")
+	})
 
 	app.Get("/healcheck", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{
